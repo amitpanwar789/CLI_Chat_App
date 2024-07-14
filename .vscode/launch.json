@@ -1,0 +1,17 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Python: webClient",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${workspaceFolder}/client/webClient.py",
+            "args": [
+                "secret",  // Replace with actual room ID
+                "amit"  // Replace with actual username
+            ],
+            "console": "integratedTerminal",
+            "justMyCode": true
+        }
+    ]
+}
