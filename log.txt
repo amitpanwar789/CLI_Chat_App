@@ -1,5 +1,0 @@
-@amit: has joined the room.
-hello amit i am ankit
-@amit::
-@amit::exit()
-exit()

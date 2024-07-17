@@ -248,19 +248,17 @@ def send_messages(stdscr):
     while not finished:
         box.edit()
         message = box.gather().strip()
+        if message.strip() == "exit()":
+            finished = True
+            sio.emit('leave_room',{"username":username,"room":room_id})
+            sio.disconnect()
+            break
         encrypt_message( message)
         append_to_log_file(message)
         sender_win_sub.clear()
         sender_win_sub.refresh()
 
-        if message.strip() == "exit()":
-            print("You have left the room.")
-            finished = True
-            sio.emit('leave_room',{"username":username,"room":room_id})
-            sio.disconnect()
-            break
-
-
+        
 
 
 def connect_to_server(stdscr):
