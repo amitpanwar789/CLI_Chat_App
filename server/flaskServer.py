@@ -22,7 +22,7 @@ def add_user_to_room(username, room_name, sid):
 
 
 def check_username_availability(username, room_name):
-    return room_name not in rooms or username not in rooms[room_name]
+    return room_name in rooms and username in rooms[room_name]
 
 
 @app.route('/')
@@ -34,7 +34,7 @@ def index():
 def on_join(data):
     username = data['username']
     room = data['room']
-    if not check_username_availability(username, room):
+    if check_username_availability(username, room):
         emit('status', {'message': f"Username {username} already exists in the room {room}."})
         disconnect()
         return

@@ -5,7 +5,7 @@
             "name": "Python: webClient",
             "type": "debugpy",
             "request": "launch",
-            "program": "${workspaceFolder}/client/webClient.py",
+            "program": "${workspaceFolder}/server/flaskServer.py",
             "args": [
                 "secret",  // Replace with actual room ID
                 "amit"  // Replace with actual username
