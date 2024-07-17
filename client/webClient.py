@@ -267,7 +267,7 @@ def connect_to_server(stdscr):
     """
     global username, public_key, room_id
     try:
-        sio.connect('http://localhost:12345')
+        sio.connect('http://100.20.92.101:12345')
         #print("Connected to the server.")
         receive_messages(stdscr)
 
