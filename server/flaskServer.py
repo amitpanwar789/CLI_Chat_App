@@ -5,7 +5,6 @@ from flask_socketio import SocketIO, emit, join_room, leave_room, disconnect
 from cryptography.hazmat.primitives.asymmetric import rsa, padding
 from cryptography.hazmat.primitives import serialization, hashes
 from flask_cors import CORS
-import requests
 
 app = Flask(__name__)
 CORS(app)
