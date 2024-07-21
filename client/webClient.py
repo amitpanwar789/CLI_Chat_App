@@ -4,7 +4,6 @@ import socket
 import sys
 import threading
 import time
-import colorama
 import json
 from cryptography.hazmat.primitives.asymmetric import rsa, padding
 from cryptography.hazmat.primitives import serialization
@@ -32,6 +31,8 @@ private_key = None
 room_id = None
 
 
+stop_event = threading.Event()
+
 
 def generate_private_public_key():
     """
@@ -48,6 +49,7 @@ def generate_private_public_key():
 
 # Create a Socket.IO client
 sio = socketio.Client()
+
 
 # Event handler for connection
 @sio.event
@@ -115,6 +117,26 @@ def encrypt_message(message):
         ciphertext_b64 = base64.b64encode(ciphertext).decode()
         sio.emit('private_message', {"sender": username,"recipient":receiver_username,"room": room_id, "message": ciphertext_b64})
 
+def encrypt_message_private_message(message,receiver_username):
+    """
+    Encrypt and send a message to all recipients.
+    """
+    global keys
+    message_val = message.encode()
+    
+    if receiver_username in keys:
+        receiver_pub_key = keys[receiver_username]
+        ciphertext = receiver_pub_key.encrypt(
+            message_val,
+            padding.OAEP(
+                mgf=padding.MGF1(algorithm=hashes.SHA256()),
+                algorithm=hashes.SHA256(),
+                label=None
+            )
+        )
+        ciphertext_b64 = base64.b64encode(ciphertext).decode()
+        sio.emit('private_message', {"sender": username,"recipient":receiver_username,"room": room_id, "message": ciphertext_b64})
+
 
 
 def decrypt_message(ciphertext):
@@ -122,15 +144,18 @@ def decrypt_message(ciphertext):
     Decrypt a ciphertext using the private key.
     """
     global private_key
-    ciphertext = base64.b64decode(ciphertext)
-    decrypted_message = private_key.decrypt(
-        ciphertext,
-        padding.OAEP(
-            mgf=padding.MGF1(algorithm=hashes.SHA256()),
-            algorithm=hashes.SHA256(),
-            label=None
+    try:
+        ciphertext = base64.b64decode(ciphertext)
+        decrypted_message = private_key.decrypt(
+            ciphertext,
+            padding.OAEP(
+                mgf=padding.MGF1(algorithm=hashes.SHA256()),
+                algorithm=hashes.SHA256(),
+                label=None
+            )
         )
-    )
+    except Exception as e:
+        return ciphertext.decode()
     return decrypted_message.decode()
 
 
@@ -199,11 +224,12 @@ def on_public_key(data):
     if store_public_key(sender_username,sender_public_key):
         return 
     else :
-        append_to_log_file(f"{sender_username} has joined the room.")
         send_public_key()
     
 
-
+@sio.on('disconnect')
+def on_disconnect():
+    curses.endwin()
 
 
 def receive_messages(stdscr):
@@ -249,9 +275,7 @@ def send_messages(stdscr):
         box.edit()
         message = box.gather().strip()
         if message.strip() == "exit()":
-            finished = True
             sio.emit('leave_room',{"username":username,"room":room_id})
-            sio.disconnect()
             break
         encrypt_message( message)
         append_to_log_file(message)
@@ -259,6 +283,11 @@ def send_messages(stdscr):
         sender_win_sub.refresh()
 
         
+def send_ping():
+    while not stop_event.is_set():
+        sio.emit('ping_server',{"username":username,"room":room_id})
+        time.sleep(10)
+
 
 
 def connect_to_server(stdscr):
@@ -267,7 +296,7 @@ def connect_to_server(stdscr):
     """
     global username, public_key, room_id
     try:
-        sio.connect('https://cli-chat-app-hea4.onrender.com')
+        sio.connect('http://localhost:12345')
         #print("Connected to the server.")
         receive_messages(stdscr)
 
@@ -288,14 +317,18 @@ def connect_to_server(stdscr):
         
         send_thread = threading.Thread(target=send_messages, args=(stdscr,))
         send_thread.start()
+        ping_thread = threading.Thread(target=send_ping)
+        ping_thread.daemon = True
+        ping_thread.start()
         send_thread.join()
         
         
     except Exception as e:
         print("Failed to connect to the server.")
     finally:
-        sys.exit()
-
+        stop_event.set()
+        sio.disconnect()
+    
 
 def main(stdscr):
     """
