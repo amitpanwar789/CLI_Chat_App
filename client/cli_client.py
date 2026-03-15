@@ -99,10 +99,11 @@ class ChatApp(App):
         Binding("ctrl+c", "quit", "Quit", show=True, priority=True),
     ]
 
-    def __init__(self, room_id: str, username: str, server_url: str):
+    def __init__(self, room_id: str, username: str, password: str, server_url: str):
         super().__init__()
         self.room_id = room_id
         self.username = f"@{username}:"
+        self.password = password
         self.server_url = server_url
         
         # UI Widgets
@@ -249,7 +250,7 @@ class ChatApp(App):
     async def connect_to_server(self):
         try:
             await self.sio.connect(self.server_url)
-            await self.sio.emit("join", {"username": self.username, "room": self.room_id})
+            await self.sio.emit("join", {"username": self.username, "room": self.room_id, "password": self.password})
             
             # Send our public key
             await self.sio.emit("public_key", {
@@ -319,14 +320,25 @@ class ChatApp(App):
 
 
 if __name__ == "__main__":
-    if len(sys.argv) < 3:
-        print("Usage: python3 cli_client.py <room_id> <username> [server_url]")
-        print("Example: python3 cli_client.py Room1 Alice https://my-backend.onrender.com")
-        sys.exit(1)
+    from rich.prompt import Prompt
+    from rich.console import Console
+    
+    console = Console()
+    console.clear()
+    console.print("[bold cyan]Welcome to the E2EE CLI Chat![/]")
+    console.print("1. Create a new room")
+    console.print("2. Join an existing room")
+    
+    choice = Prompt.ask("Select an option", choices=["1", "2"], default="2")
+    
+    if choice == "1":
+        room_id = Prompt.ask("[bold green]Enter a new room name[/]")
+    else:
+        room_id = Prompt.ask("[bold green]Enter the room name to join[/]")
+        
+    password = Prompt.ask("[bold yellow]Enter the room password[/]", password=True)
+    username = Prompt.ask("[bold magenta]Enter your username[/]")
+    server_url = Prompt.ask("[bold blue]Enter server URL[/]", default="http://localhost:12345")
 
-    room_id = sys.argv[1]
-    username = sys.argv[2]
-    server_url = sys.argv[3] if len(sys.argv) > 3 else "http://localhost:12345"
-
-    app = ChatApp(room_id, username, server_url)
+    app = ChatApp(room_id, username, password, server_url)
     app.run()
