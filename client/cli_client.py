@@ -99,12 +99,11 @@ class ChatApp(App):
         Binding("ctrl+c", "quit", "Quit", show=True, priority=True),
     ]
 
-    def __init__(self, room_id: str, username: str, host: str, port: int):
+    def __init__(self, room_id: str, username: str, server_url: str):
         super().__init__()
         self.room_id = room_id
         self.username = f"@{username}:"
-        self.host = host
-        self.port = port
+        self.server_url = server_url
         
         # UI Widgets
         self.log_widget = RichLog(id="chat-log", markup=True, highlight=True, wrap=True)
@@ -137,7 +136,7 @@ class ChatApp(App):
         self.log_file = f"log_{self.username.strip('@:')}.txt"
         open(self.log_file, 'a').close() # touch file
         
-        self.print_log(f"[bold green]Starting connection to http://{self.host}:{self.port}...[/]")
+        self.print_log(f"[bold green]Starting connection to {self.server_url}...[/]")
         self.setup_socket_events()
         
         # Connect asynchronously without blocking UI
@@ -249,7 +248,7 @@ class ChatApp(App):
 
     async def connect_to_server(self):
         try:
-            await self.sio.connect(f"http://{self.host}:{self.port}")
+            await self.sio.connect(self.server_url)
             await self.sio.emit("join", {"username": self.username, "room": self.room_id})
             
             # Send our public key
@@ -321,13 +320,13 @@ class ChatApp(App):
 
 if __name__ == "__main__":
     if len(sys.argv) < 3:
-        print("Usage: python3 webClient.py <room_id> <username> [host] [port]")
+        print("Usage: python3 cli_client.py <room_id> <username> [server_url]")
+        print("Example: python3 cli_client.py Room1 Alice https://my-backend.onrender.com")
         sys.exit(1)
 
     room_id = sys.argv[1]
     username = sys.argv[2]
-    host = sys.argv[3] if len(sys.argv) > 3 else "localhost"
-    port = int(sys.argv[4]) if len(sys.argv) > 4 else 12345
+    server_url = sys.argv[3] if len(sys.argv) > 3 else "http://localhost:12345"
 
-    app = ChatApp(room_id, username, host, port)
+    app = ChatApp(room_id, username, server_url)
     app.run()
