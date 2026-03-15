@@ -61,22 +61,33 @@ const publicKeys = new Map();
  */
 const lastActivity = new Map();
 
+/**
+ * roomPasswords: Map<roomName, password>
+ * Stores the plaintext password for the room.
+ */
+const roomPasswords = new Map();
+
 // =============================================================================
 // Room Manager Helpers
 // =============================================================================
 
-function addUser(username, room, socketId) {
+function addUser(username, room, password, socketId) {
     if (!rooms.has(room)) {
         rooms.set(room, new Map());
+        roomPasswords.set(room, password);
         logger.info(`[ROOM CREATED] Room '${room}' was created by ${username}.`);
     } else {
+        if (roomPasswords.get(room) !== password) {
+            logger.info(`[AUTH FAILED] ${username} failed to join room '${room}' due to incorrect password.`);
+            return "INVALID_PASSWORD";
+        }
         logger.info(`[ROOM JOIN] ${username} is attempting to join existing room '${room}'.`);
     }
     const roomUsers = rooms.get(room);
-    if (roomUsers.has(username)) return false; // username taken
+    if (roomUsers.has(username)) return "USERNAME_TAKEN"; // username taken
     roomUsers.set(username, socketId);
     lastActivity.set(socketId, Date.now());
-    return true;
+    return "SUCCESS";
 }
 
 function removeUser(username, room) {
@@ -95,6 +106,7 @@ function removeUser(username, room) {
     if (roomUsers.size === 0) {
         rooms.delete(room);
         publicKeys.delete(room);
+        roomPasswords.delete(room);
     }
 
     return socketId;
@@ -155,9 +167,16 @@ const io = new Server(httpServer, {
 io.on("connection", (socket) => {
     // -- Join a Room ------------------------------------------------------------
     socket.on("join", (data) => {
-        const { username, room } = data;
+        const { username, room, password } = data;
 
-        if (!addUser(username, room, socket.id)) {
+        const status = addUser(username, room, password, socket.id);
+        if (status === "INVALID_PASSWORD") {
+            socket.emit("status", {
+                message: `Incorrect password for room ${room}.`,
+            });
+            socket.disconnect(true);
+            return;
+        } else if (status === "USERNAME_TAKEN") {
             socket.emit("status", {
                 message: `Username ${username} is already taken in room ${room}.`,
             });
