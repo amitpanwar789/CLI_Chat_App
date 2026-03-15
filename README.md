@@ -61,7 +61,30 @@ The frontend is a Python CLI that relies on the `Textual` framework for a rich, 
 Alternatively, a public cloud instance is live and continuously running at:
 `https://cli-chat-app-hea4.onrender.com`
 
-### Running the CLI Client
+### 💻 Easiest Way: Download Pre-built Client
+
+You do not need to install Python or any dependencies to run the client! 
+Our GitHub Actions automatically build standalone native executables for **Windows**, **macOS**, and **Linux**.
+
+1. Go to the **[Actions tab](../../actions)** of this repository.
+2. Click the latest successful run of the **"Build Standalone Executables"** workflow.
+3. Scroll to the bottom and download the artifact for your operating system:
+   - `executable-windows-latest` (contains `cli_chat_windows.exe`)
+   - `executable-macos-latest`
+   - `executable-ubuntu-latest` (Linux)
+4. Extract the `.zip` file.
+   - **For Windows:** Simply double-click the `.exe` file to launch the interactive UI.
+   - **For macOS / Linux:** Make the file executable and run it from your terminal:
+     ```bash
+     chmod +x cli_chat_linux
+     ./cli_chat_linux
+     ```
+
+*(If you prefer to run the client from source code instead, follow the advanced instructions below).*
+
+---
+
+### Running the CLI Client from Source
 Because modern Linux distributions enforce PEP-668 (externally managed environments), you must run the client inside a virtual environment.
 
 1. Navigate to the client directory:
