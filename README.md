@@ -58,6 +58,9 @@ The frontend is a Python CLI that relies on the `Textual` framework for a rich, 
    ```
 *(The server features structured logging via Winston, tracking room creation, key exchanges, and message deliveries in `server.log` and the terminal).*
 
+Alternatively, a public cloud instance is live and continuously running at:
+`https://cli-chat-app-hea4.onrender.com`
+
 ### Running the CLI Client
 Because modern Linux distributions enforce PEP-668 (externally managed environments), you must run the client inside a virtual environment.
 
@@ -76,11 +79,16 @@ Because modern Linux distributions enforce PEP-668 (externally managed environme
    ```
 4. Run the Client:
    ```bash
-   python3 cli_client.py <room_name> <your_username> [host] [port]
+   python3 cli_client.py <room_name> <your_username> [server_url]
    ```
-   **Example:**
+   **Example (Connecting to the Live Cloud Backend):**
    ```bash
-   python3 cli_client.py Room1 Alice
+   python3 cli_client.py Room1 Alice https://cli-chat-app-hea4.onrender.com
+   ```
+   
+   **Example (Connecting to a Local Server):**
+   ```bash
+   python3 cli_client.py Room1 Alice http://localhost:12345
    ```
 
 ---

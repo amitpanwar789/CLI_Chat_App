@@ -99,12 +99,12 @@ class ChatApp(App):
         Binding("ctrl+c", "quit", "Quit", show=True, priority=True),
     ]
 
-    def __init__(self, room_id: str, username: str, host: str, port: int):
+    def __init__(self, room_id: str, username: str, password: str, server_url: str):
         super().__init__()
         self.room_id = room_id
         self.username = f"@{username}:"
-        self.host = host
-        self.port = port
+        self.password = password
+        self.server_url = server_url
         
         # UI Widgets
         self.log_widget = RichLog(id="chat-log", markup=True, highlight=True, wrap=True)
@@ -137,7 +137,7 @@ class ChatApp(App):
         self.log_file = f"log_{self.username.strip('@:')}.txt"
         open(self.log_file, 'a').close() # touch file
         
-        self.print_log(f"[bold green]Starting connection to http://{self.host}:{self.port}...[/]")
+        self.print_log(f"[bold green]Starting connection to {self.server_url}...[/]")
         self.setup_socket_events()
         
         # Connect asynchronously without blocking UI
@@ -249,8 +249,8 @@ class ChatApp(App):
 
     async def connect_to_server(self):
         try:
-            await self.sio.connect(f"http://{self.host}:{self.port}")
-            await self.sio.emit("join", {"username": self.username, "room": self.room_id})
+            await self.sio.connect(self.server_url)
+            await self.sio.emit("join", {"username": self.username, "room": self.room_id, "password": self.password})
             
             # Send our public key
             await self.sio.emit("public_key", {
@@ -320,14 +320,25 @@ class ChatApp(App):
 
 
 if __name__ == "__main__":
-    if len(sys.argv) < 3:
-        print("Usage: python3 webClient.py <room_id> <username> [host] [port]")
-        sys.exit(1)
+    from rich.prompt import Prompt
+    from rich.console import Console
+    
+    console = Console()
+    console.clear()
+    console.print("[bold cyan]Welcome to the E2EE CLI Chat![/]")
+    console.print("1. Create a new room")
+    console.print("2. Join an existing room")
+    
+    choice = Prompt.ask("Select an option", choices=["1", "2"], default="2")
+    
+    if choice == "1":
+        room_id = Prompt.ask("[bold green]Enter a new room name[/]")
+    else:
+        room_id = Prompt.ask("[bold green]Enter the room name to join[/]")
+        
+    password = Prompt.ask("[bold yellow]Enter the room password[/]", password=True)
+    username = Prompt.ask("[bold magenta]Enter your username[/]")
+    server_url = Prompt.ask("[bold blue]Enter server URL[/]", default="http://localhost:12345")
 
-    room_id = sys.argv[1]
-    username = sys.argv[2]
-    host = sys.argv[3] if len(sys.argv) > 3 else "localhost"
-    port = int(sys.argv[4]) if len(sys.argv) > 4 else 12345
-
-    app = ChatApp(room_id, username, host, port)
+    app = ChatApp(room_id, username, password, server_url)
     app.run()
