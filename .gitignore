@@ -1,4 +1,7 @@
 #experiment file
 test.py
-./client/log.txt
+./client/log*.txt
 .vscode
+node_modules/
+*.txt
+*.log
